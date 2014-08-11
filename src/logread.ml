@@ -2,7 +2,11 @@ module C = Core.Command
 module S = Core.Command.Spec
 module F = File
 module L = Log
+module E = Log.Entry
 module G = Gallery
+module V = Gallery.Visitor
+module R = Gallery.Room
+module EV = Gallery.Event
 module P = Plain
 
 let spec =
@@ -48,6 +52,20 @@ let print_state (log: L.t) : unit =
     in
     (P.print_state (employees, visitors, (M.fold g room_map [])))
 
+module ST = Set.Make(V)
+
+let print_rooms employees guests log =
+    let f creator set visitor_name = (ST.add (creator visitor_name) set) in
+    let visitors = (List.fold_left (f (fun x -> V.Employee x)) ST.empty employees) in
+    let visitors = (List.fold_left (f (fun x -> V.Guest x)) visitors guests) in
+    let g lst entry =
+      match entry with
+        | v,EV.Entry,_,R.Some r -> if (ST.mem v visitors) then r :: lst else lst
+        | _ -> lst
+    in 
+    P.print_rooms (List.fold_left g [] (L.entries log))
+
+
 let command = 
     C.basic
       ~summary:"Query the data on the log file using the authentication token"
@@ -62,6 +80,9 @@ let command =
         match h,s,r,e,g,t,i,a,l,u,b with
         | true,true,false,[],[],false,false,false,[],[],false -> raise Not_Implemented
         | false,true,false,[],[],false,false,false,[],[],false -> print_state (log)
+        | _,false,true,[],[],false,false,false,[],[],false -> raise Invalid_Argument
+        | true,false,true,employees,guests,false,false,false,[],[],false -> raise Not_Implemented
+        | false,false,true,employees,guests,false,false,false,[],[],false -> print_rooms employees guests log
         | _,_,_,_,_,_,_,_,_,_,_ -> raise Invalid_Argument
       )
 

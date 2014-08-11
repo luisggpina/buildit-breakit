@@ -23,7 +23,9 @@ let print_state (rooms) =
     (L.iter print_room room_lst)
 
 let print_rooms (rooms) =
-  raise Not_Implemented
+  let print_room r = print_int r ; print_string ", " in 
+  (L.iter print_room rooms) ;
+  print_endline ""
 
 let print_names (names) =
   raise Not_Implemented
