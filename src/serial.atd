@@ -1,0 +1,13 @@
+type event <ocaml predef module="Gallery.Event" t="t"> = [ Entry | Departure ] <ocaml repr="classic">
+
+type room <ocaml predef module="Gallery.Room" t="t"> = [ None | Some of int | Gallery ] <ocaml repr="classic">
+
+type visitor <ocaml predef module="Gallery.Visitor" t="t"> = [ Employee of string | Guest of string ] <ocaml repr="classic">
+
+type time <ocaml predef module="Gallery.Time" t="t"> = int
+
+type gallery = (time * (visitor * room) list)
+
+type entry <ocaml predef module="Log.Entry" t="t"> = (visitor * event * time * room) <ocaml repr="classic">
+
+type log = (gallery * entry list)
