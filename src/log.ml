@@ -140,3 +140,13 @@ let print_occupied_rooms visitors log =
     in
     let results = RS.fold results_printer results [] in
     (P.print_rooms results)
+
+let print_employees low up log =
+    let rec find_time time entries f result =
+        match entries with
+        | [] -> raise Invalid_Argument
+        | (v,e,t,r) :: rest -> 
+                if (t < time) then (rest,result)
+                else find_time time rest f (f v result)
+    in
+    ()

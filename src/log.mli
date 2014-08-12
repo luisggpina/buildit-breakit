@@ -30,3 +30,5 @@ val print_time : Gallery.Visitor.t -> t -> unit
 module VS : Set.S with type elt = Gallery.Visitor.t
 
 val print_occupied_rooms : VS.t -> t -> unit
+
+val print_employees : Gallery.Time.t -> Gallery.Time.t -> t -> unit

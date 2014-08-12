@@ -58,6 +58,9 @@ let command =
         | _,false,false,[],[],false,true,false,[],[],false -> raise Invalid_Argument
         | true,false,false,employees, guests ,false,true,false,[],[],false -> raise Not_Implemented
         | false,false,false,employees, guests ,false,true,false,[],[],false -> print_occupied_rooms employees guests log
+        | true,false,false,[],[],false,false,true,[ low ],[ up ],false -> raise Not_Implemented
+        | false,false,false,[],[],false,false,true,[ low ],[ up ],false ->
+                if (up > low) then L.print_employees low up log else raise Invalid_Argument
         | _,_,_,_,_,_,_,_,_,_,_ -> raise Invalid_Argument
       )
 
