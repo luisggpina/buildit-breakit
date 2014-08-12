@@ -52,8 +52,6 @@ let print_state (log: L.t) : unit =
     in
     (P.print_state (employees, visitors, (M.fold g room_map [])))
 
-module ST = Set.Make(V)
-
 let print_rooms visitor log =
     let g lst entry =
       match entry with
@@ -62,6 +60,25 @@ let print_rooms visitor log =
         | _ -> lst
     in 
     P.print_rooms (List.fold_left g [] (L.entries log))
+
+let print_time visitor log =
+  let gal = (L.gallery log) in
+  let in_gal v r is_in = is_in || ((V.compare v visitor) == 0) in
+  let is_in = G.fold in_gal gal false in
+  let compute_time (total,last_leave) entry =
+      let (v,ev,t,r) = entry in
+      if ((V.compare v visitor) != 0) then
+          (total,last_leave)
+      else
+        match ev,r with
+        | EV.Entry,R.Gallery -> (total + (last_leave - t), 0)
+        | EV.Departure,R.Gallery -> (total, t)
+        | _ -> (total,last_leave)
+  in
+  let last_leave = if (is_in) then (G.current_time gal) else 0 in
+  let start = (0,last_leave) in
+  let (total,_) = (List.fold_left compute_time start (L.entries log)) in
+  print_int total ; print_newline ()
 
 
 let command = 
@@ -82,6 +99,9 @@ let command =
         | true,false,true,employees,guests,false,false,false,[],[],false -> raise Not_Implemented
         | false,false,true,[ employee ],[],false,false,false,[],[],false -> print_rooms (V.Employee employee) log
         | false,false,true,[],[ guest ],false,false,false,[],[],false -> print_rooms (V.Guest guest) log
+        | true,false,false,employees,guests,true,false,false,[],[],false -> raise Not_Implemented
+        | false,false,false,[ employee ],[],true,false,false,[],[],false -> print_time (V.Employee employee) log
+        | false,false,false,[],[ guest ],true,false,false,[],[],false -> print_time (V.Guest guest) log
         | _,_,_,_,_,_,_,_,_,_,_ -> raise Invalid_Argument
       )
 
