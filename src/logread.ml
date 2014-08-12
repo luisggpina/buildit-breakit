@@ -54,13 +54,11 @@ let print_state (log: L.t) : unit =
 
 module ST = Set.Make(V)
 
-let print_rooms employees guests log =
-    let f creator set visitor_name = (ST.add (creator visitor_name) set) in
-    let visitors = (List.fold_left (f (fun x -> V.Employee x)) ST.empty employees) in
-    let visitors = (List.fold_left (f (fun x -> V.Guest x)) visitors guests) in
+let print_rooms visitor log =
     let g lst entry =
       match entry with
-        | v,EV.Entry,_,R.Some r -> if (ST.mem v visitors) then r :: lst else lst
+        | v,EV.Entry,_,R.Some r -> 
+            if ((V.compare v visitor) == 0) then r :: lst else lst
         | _ -> lst
     in 
     P.print_rooms (List.fold_left g [] (L.entries log))
@@ -82,7 +80,8 @@ let command =
         | false,true,false,[],[],false,false,false,[],[],false -> print_state (log)
         | _,false,true,[],[],false,false,false,[],[],false -> raise Invalid_Argument
         | true,false,true,employees,guests,false,false,false,[],[],false -> raise Not_Implemented
-        | false,false,true,employees,guests,false,false,false,[],[],false -> print_rooms employees guests log
+        | false,false,true,[ employee ],[],false,false,false,[],[],false -> print_rooms (V.Employee employee) log
+        | false,false,true,[],[ guest ],false,false,false,[],[],false -> print_rooms (V.Guest guest) log
         | _,_,_,_,_,_,_,_,_,_,_ -> raise Invalid_Argument
       )
 
