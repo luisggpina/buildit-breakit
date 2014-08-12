@@ -61,11 +61,7 @@ let command =
               | true,false -> E.Entry
               | false,true -> E.Departure
               | _ -> raise Invalid_Argument in
-              let room = match event,r with
-              | E.Entry,_ -> R.inside (r)
-              | E.Departure,Some _ -> R.inside (r)
-              | E.Departure,None -> R.outside () in
-              let log = (L.process_event visitor event t room log) in
+              let log = (L.process_event visitor event t (R.inside r) log) in
               F.write_file log_filename log
           )
           | _ -> raise Invalid_Argument

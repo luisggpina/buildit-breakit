@@ -75,7 +75,7 @@ let process_event (visitor) (event) (time) (room) (gallery) =
                 if (cur_r == r) 
                 then (RM.add visitor Room.Gallery cur_map) 
                 else raise Invalid_State
-        | Event.Departure,Room.Gallery,Room.None -> (RM.remove visitor cur_map)
+        | Event.Departure,Room.Gallery,Room.Gallery -> (RM.remove visitor cur_map)
         | _ -> raise Invalid_State in
     if (time <= cur_t)
     then raise Invalid_State
