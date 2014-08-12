@@ -20,3 +20,13 @@ val entries : t -> Entry.t list
 val from_serial : ((Gallery.Time.t * ((Gallery.Visitor.t * Gallery.Room.t) list)) * Entry.t list) -> t
 
 val to_serial : t -> ((Gallery.Time.t * ((Gallery.Visitor.t * Gallery.Room.t) list)) * Entry.t list)
+
+val print_state : t -> unit
+
+val print_rooms : Gallery.Visitor.t -> t -> unit
+
+val print_time : Gallery.Visitor.t -> t -> unit
+
+module VS : Set.S with type elt = Gallery.Visitor.t
+
+val print_occupied_rooms : VS.t -> t -> unit
