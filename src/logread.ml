@@ -80,6 +80,62 @@ let print_time visitor log =
   let (total,_) = (List.fold_left compute_time start (L.entries log)) in
   print_int total ; print_newline ()
 
+module VS = Set.Make(V)
+module RS = Set.Make(R)
+module RM = Map.Make(R)
+
+let print_occupied_rooms employees guests log =
+    let (gal,entries) = log in
+    let create_visitor_set _ =
+        let f creator set visitor = (VS.add (creator visitor) set) in
+        let visitors = List.fold_left (f (fun x -> V.Employee x)) VS.empty employees in
+        let visitors = List.fold_left (f (fun x -> V.Guest x)) visitors guests in
+        visitors
+    in
+    let visitors = create_visitor_set () in
+    let size = (VS.cardinal visitors) in
+    let create_map_from_gallery _ = 
+        let f visitor room (map,results) =
+            match room with
+            | R.Some _ ->
+                    if (VS.mem visitor visitors) then
+                        let room_size = (if (RM.mem room map) then (RM.find room map) else 0) + 1 in
+                        let results = if (room_size == size) then (RS.add room results) else results in
+                        ((RM.add room room_size map),results)
+                    else (map,results)
+            | _ -> (map,results)
+        in G.fold f gal (RM.empty,RS.empty)
+    in
+    let (room_map,results) = create_map_from_gallery () in
+    let proc_entry (room_map,results) entry =
+        let (v,e,t,r) = entry in
+        if (RS.mem r results) then (room_map,results) 
+        else
+            match r with
+            | R.Some _ ->
+                    if (VS.mem v visitors) then
+                        let occupants = if (RM.mem r room_map) then (RM.find r room_map) else 0 in
+                        match e with
+                        | EV.Departure ->
+                                let occupants = occupants + 1 in
+                                if (occupants == size) then
+                                    ((RM.remove r room_map),(RS.add r results))
+                                else
+                                    ((RM.add r occupants room_map),results)
+                        | EV.Entry -> 
+                                ((RM.add r (occupants - 1) room_map),results)
+                    else
+                        (room_map,results)
+            | _ -> (room_map,results)
+    in
+    let (_,results) = (List.fold_left proc_entry (room_map,results) entries) in
+    let results_printer room lst =
+        match room with
+        | R.Some r -> r :: lst
+        | _ -> raise Invalid_Argument
+    in
+    let results = RS.fold results_printer results [] in
+    (P.print_rooms results)
 
 let command = 
     C.basic
@@ -99,9 +155,11 @@ let command =
         | true,false,true,employees,guests,false,false,false,[],[],false -> raise Not_Implemented
         | false,false,true,[ employee ],[],false,false,false,[],[],false -> print_rooms (V.Employee employee) log
         | false,false,true,[],[ guest ],false,false,false,[],[],false -> print_rooms (V.Guest guest) log
-        | true,false,false,employees,guests,true,false,false,[],[],false -> raise Not_Implemented
         | false,false,false,[ employee ],[],true,false,false,[],[],false -> print_time (V.Employee employee) log
         | false,false,false,[],[ guest ],true,false,false,[],[],false -> print_time (V.Guest guest) log
+        | _,false,false,[],[],false,true,false,[],[],false -> raise Invalid_Argument
+        | true,false,false,employees, guests ,false,true,false,[],[],false -> raise Not_Implemented
+        | false,false,false,employees, guests ,false,true,false,[],[],false -> print_occupied_rooms employees guests log
         | _,_,_,_,_,_,_,_,_,_,_ -> raise Invalid_Argument
       )
 
