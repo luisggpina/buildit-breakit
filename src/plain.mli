@@ -4,4 +4,4 @@ val print_state : Gallery.Visitor.t list * Gallery.Visitor.t list * (Gallery.Roo
 
 val print_rooms : int list -> unit
 
-val print_names : string list -> unit
+val print_names : Gallery.Visitor.t list -> unit

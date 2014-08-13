@@ -142,11 +142,29 @@ let print_occupied_rooms visitors log =
     (P.print_rooms results)
 
 let print_employees low up log =
-    let rec find_time time entries f result =
-        match entries with
-        | [] -> raise Invalid_Argument
-        | (v,e,t,r) :: rest -> 
-                if (t < time) then (rest,result)
-                else find_time time rest f (f v result)
+    let (gal, entries) = log in
+    let create_set_from_gallery _ = 
+        let f visitor room set =
+            match visitor,room with
+            | V.Employee _, R.Gallery
+            | V.Employee _, R.Some _ -> (VS.add visitor set)
+            | _ -> set
+        in G.fold f gal (VS.empty)
     in
-    ()
+    let rec proc_entry set entries =
+           match entries with
+           | (V.Employee _ as e,E.Departure,t,R.Gallery) :: rest when t > up ->
+                   proc_entry (VS.add e set) rest
+           | (V.Employee _ as e,E.Entry,t,R.Gallery) :: rest when t > up ->
+                   proc_entry (VS.remove e set) rest
+           | (_,_,t,_) :: _ when t < low ->
+                   set
+           | (V.Employee _ as e,_,_,R.Gallery) :: rest ->
+                   proc_entry (VS.remove e set) rest
+           | [] -> 
+                   set
+           | _ :: rest ->
+                   proc_entry set rest
+    in
+    let set = (proc_entry (create_set_from_gallery ()) entries) in
+    P.print_names (VS.fold (fun x lst -> x :: lst) set [])

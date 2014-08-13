@@ -28,4 +28,8 @@ let print_rooms (rooms) =
   print_endline ""
 
 let print_names (names) =
-  raise Not_Implemented
+  let print_visitor v = 
+      print_string ((match v with | V.Employee n | V.Guest n -> n) ^ ",")
+  in
+  (L.iter print_visitor names) ;
+  print_endline ""
