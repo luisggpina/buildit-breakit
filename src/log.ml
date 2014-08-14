@@ -141,7 +141,7 @@ let print_occupied_rooms visitors log =
     let results = RS.fold results_printer results [] in
     (P.print_rooms results)
 
-let print_employees low up log =
+let print_employees i1 i2 log =
     let (gal, entries) = log in
     let create_set_from_gallery _ = 
         let f visitor room set =
@@ -151,20 +151,49 @@ let print_employees low up log =
             | _ -> set
         in G.fold f gal (VS.empty)
     in
-    let rec proc_entry set entries =
-           match entries with
-           | (V.Employee _ as e,E.Departure,t,R.Gallery) :: rest when t > up ->
-                   proc_entry (VS.add e set) rest
-           | (V.Employee _ as e,E.Entry,t,R.Gallery) :: rest when t > up ->
-                   proc_entry (VS.remove e set) rest
-           | (_,_,t,_) :: _ when t < low ->
-                   set
-           | (V.Employee _ as e,_,_,R.Gallery) :: rest ->
-                   proc_entry (VS.remove e set) rest
-           | [] -> 
-                   set
-           | _ :: rest ->
-                   proc_entry set rest
+    let proc_entry set entries =
+        let rec within low set entries =
+            match entries with
+            | [] ->
+                    set
+            | (_,_,t,_) :: _ when t < low ->
+                    set
+            | (V.Employee _ as e,_,_,R.Gallery) :: rest ->
+                    within low (VS.remove e set) rest
+            | _ :: rest ->
+                    within low set rest
+        in
+        let rec after (low,up) set entries =
+            match entries with
+            | (_,_,t,_) :: _ when t < up ->
+                    (within low set entries,set,entries)
+            | (V.Employee _ as e,E.Departure,t,R.Gallery) :: rest ->
+                    after (low,up) (VS.add e set) rest
+            | (V.Employee _ as e,E.Entry,t,R.Gallery) :: rest ->
+                    after (low,up) (VS.remove e set) rest
+            | [] ->
+                    (VS.empty,VS.empty,[])
+            | _ :: rest ->
+                    after (low,up) set rest
+        in
+        match i2 with
+        | Some i2 ->
+                let (l1,u1) = i1 in
+                let (l2,u2) = i2 in
+                let sorted = (List.rev (List.sort compare (u1 :: l1 :: u2 :: l2 :: []))) in
+                (match sorted with
+                | au1 :: al1 :: au2 :: al2 :: [] ->
+                        let (a,set,entries) = after (al1,au1) set entries in
+                        let (b,set,entries) = after (au2,al1) set entries in
+                        let (c,set,entries) = after (al2,au2) set entries in
+                        if l1 >= u2             then (VS.diff a c) else
+                        if l2 >= u1             then (VS.diff c a) else
+                        if u1 >= u2 && u2 >= l1 then (VS.diff (VS.inter a b) (VS.inter b c)) else
+                        if u1 >= u2 && u2 >= l2 then (VS.diff (VS.inter (VS.inter a b) c) b) else
+                        if u2 >= u1 && u1 >= l1 then (VS.diff b (VS.inter (VS.inter a b) c))
+                                                else (VS.diff (VS.inter b c) (VS.inter a b))
+                | _ -> raise Invalid_Argument)
+        | None -> let (result,_,_) = after i1 set entries in result
     in
     let set = (proc_entry (create_set_from_gallery ()) entries) in
     P.print_names (VS.fold (fun x lst -> x :: lst) set [])
