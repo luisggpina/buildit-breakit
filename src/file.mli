@@ -1,3 +1,3 @@
-val open_file : string -> Log.t
+val open_file : string -> string -> Log.t
 
-val write_file : string -> Log.t -> unit
+val write_file : string -> string -> Log.t -> unit

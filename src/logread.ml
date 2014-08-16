@@ -45,10 +45,10 @@ let command =
           log file must be authenticated with the key.")
       spec
       (fun k h s r e g t i a l u b log_filename other ->
-        let log = F.open_file log_filename in
+        let log = F.open_file k log_filename in
         match h,s,r,e,g,t,i,a,l,u,b with
         | true,true,false,[],[],false,false,false,[],[],false -> raise Not_Implemented
-        | false,true,false,[],[],false,false,false,[],[],false -> L.print_state (log)
+        | false,true,false,[],[],false,false,false,[],[],false -> L.print_state log
         | _,false,true,[],[],false,false,false,[],[],false -> raise Invalid_Argument
         | true,false,true,employees,guests,false,false,false,[],[],false -> raise Not_Implemented
         | false,false,true,[ employee ],[],false,false,false,[],[],false -> L.print_rooms (V.Employee employee) log

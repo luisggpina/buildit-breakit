@@ -48,7 +48,7 @@ let name_regex  =  Str.regexp "[a-zA-Z]+"
 let sanitize_token = sanitize_regexp token_regex
 let sanitize_name  = sanitize_regexp name_regex
 
-let parse_line t k e g a l r log =
+let parse_line t e g a l r log =
     let visitor = match e,g with
     | Some e,None -> V.Employee e
     | None,Some g -> V.Guest g
@@ -60,19 +60,19 @@ let parse_line t k e g a l r log =
     L.process_event visitor event t (R.inside r) log
 
 let parse_batch b =
-    let current_log : (string option * L.t) ref = ref (None,L.empty()) in
+    let current_log : ((string * string) option * L.t) ref = ref (None,L.empty()) in
     let ic = open_in b in
     let batch_command_f t k e g a l r log_filename other =
         let log =
             (match !current_log with
-            | (None,_) -> F.open_file log_filename
-            | (Some log_name,log) when ((compare log_name log_filename) != 0) ->
-                    F.write_file log_name log ;
-                    F.open_file log_filename
+            | (None,_) -> F.open_file k log_filename
+            | (Some (log_name,log_k),log) when ((compare log_name log_filename) != 0) ->
+                    F.write_file log_k log_name log ;
+                    F.open_file k log_filename
             | (Some _,log) -> log
             ) in
-        let log = parse_line t k e g a l r log in
-        current_log := (Some log_filename,log)
+        let log = parse_line t e g a l r log in
+        current_log := (Some (log_filename,k),log)
     in
     try
         while true; do
@@ -85,7 +85,7 @@ let parse_batch b =
     | End_of_file -> 
             close_in_noerr ic ;
             (match !current_log with
-            | (Some log_filename,log) -> F.write_file log_filename log
+            | (Some (log_filename,log_k),log) -> F.write_file log_k log_filename log
             | (None,_) -> raise Invalid_Argument)
     | e -> close_in_noerr ic ; raise e
 
@@ -104,9 +104,9 @@ let command =
         match t,k,e,g,a,l,r,log_filename,b with
         | None,None,None,None,false,false,None,None,Some b -> parse_batch b
         | Some t,Some k,_,_,_,_,_,Some log_filename,None -> 
-                let log = F.open_file log_filename in
-                let log = parse_line t k e g a l r log in
-                F.write_file log_filename log
+                let log = F.open_file k log_filename in
+                let log = parse_line t e g a l r log in
+                F.write_file k log_filename log
         | _ -> raise Invalid_Argument
       )
 
