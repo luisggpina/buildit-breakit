@@ -19,6 +19,7 @@ module type Representation =
     val open_in : string -> string -> in_channel
     val input : in_channel -> string -> int -> int -> int
     val close_in_noerr : in_channel -> unit
+    val input_left : in_channel -> int
     val open_out : string -> string -> out_channel
     val output : out_channel -> string -> int -> int -> unit
     val close_out_noerr : out_channel -> unit
@@ -77,17 +78,95 @@ module Plain =
 
     type out_channel = Pervasives.out_channel
 
-    let open_in secret filename = Pervasives.open_in filename
+    let open_in secret filename = Pervasives.open_in_bin filename
 
     let input = Pervasives.input
 
     let close_in_noerr = Pervasives.close_in_noerr
 
-    let open_out secret filename = Pervasives.open_out filename
+    let input_left ic =
+        let l = in_channel_length ic in
+        let pos = (pos_in ic) in
+        l - pos
+
+    let open_out secret filename = Pervasives.open_out_bin filename
 
     let output = Pervasives.output
 
     let close_out_noerr = Pervasives.close_out_noerr
+  end
+
+let key secret =
+  let hash = H.sha256 () in
+  hash#add_string secret ;
+  hash#result
+
+exception Authentication_error
+
+module Authenticated (R : Representation) =
+  struct
+    type in_channel = R.in_channel
+
+    type out_channel = R.out_channel * C.hash
+
+    let hsize = (H.sha256 ())#hash_size
+
+    let authenticate secret filename =
+        let hash = H.sha256 () in
+        let result = key secret in
+        let l = 128 * hsize in
+        let buffer = String.make l ' ' in
+        let ic = R.open_in secret filename in
+        let rec input_block_multiple pos n =
+            let n = n - (n mod hsize) in
+            let r_n = R.input ic buffer pos n in
+            let m = r_n mod hsize in
+            if m != 0 then
+                r_n + input_block_multiple (pos + r_n) m
+            else
+                r_n
+        in
+        let rec proc_file () =
+            let r = input_block_multiple 0 l in
+            if r == 0 then begin
+                R.close_in_noerr ic ;
+                if ((compare result hash#result) != 0) then
+                    raise Authentication_error
+            end
+            else begin
+                hash#add_string result ;
+                hash#add_substring buffer 0 (r - hsize) ;
+                String.blit buffer (r - hsize) result 0 hsize ;
+                proc_file ()
+            end
+        in
+        proc_file ()
+
+    let open_in secret filename = 
+        authenticate secret filename ;
+        R.open_in secret filename
+
+    let input_left ic = (R.input_left ic) - hsize
+
+    let input ic s pos len =
+        let len = (min (input_left ic) len) in
+        R.input ic s pos len
+
+    let close_in_noerr = R.close_in_noerr
+
+    let open_out secret filename =
+        let hash = H.sha256 () in
+        hash#add_string (key secret) ;
+        (R.open_out secret filename, hash)
+
+    let output (oc,hash) s pos len =
+        hash#add_substring s pos len ;
+        R.output oc s pos len
+
+    let close_out_noerr (oc,hash) =
+        let h = hash#result in
+        R.output oc h 0 (String.length h) ;
+        R.close_out_noerr oc
   end
 
 module Gziped =
@@ -99,19 +178,14 @@ module Gziped =
 
 module Aes_encrypted =
   struct
-    let key secret =
-      let hash = H.sha256 () in
-      hash#add_string secret ;
-      hash#result
-
     let bsize = 16
 
     let p_to_c secret =
-      let iv = R.string R.secure_rng 16 in
+      let iv = R.string R.secure_rng bsize in
       (iv,CC.aes ~iv:iv (key secret) ~pad:P.length CC.Encrypt)
 
     let c_to_p secret =
-      (16, (fun iv -> CC.aes ~iv:iv (key secret) ~pad:P.length CC.Decrypt))
+      (bsize, (fun iv -> CC.aes ~iv:iv (key secret) ~pad:P.length CC.Decrypt))
   end
 
 module Cryptolib (R : Representation) (T : Transform) =
@@ -165,14 +239,21 @@ module Cryptolib (R : Representation) (T : Transform) =
           B.clear buf ;
           let r_n = input_block_multiple ic s pos n in
           trans#put_substring s pos r_n ;
-          trans#flush ;
+          if R.input_left ic != 0 then
+              trans#flush
+          else
+              trans#finish
+          ;
           let (b_s,b_pos,b_n) = trans#get_substring in
           B.add_substring buf b_s b_pos b_n ;
           buf_pos := Some 0 ;
           input (ic,trans) s pos n
 
-    let close_in_noerr (ic,trans) =
+    let close_in_noerr (ic,_) =
       R.close_in_noerr ic
+
+    let input_left (ic,_) =
+        R.input_left ic
 
     let open_out secret filename =
       let (pre,t) = T.p_to_c secret in
@@ -182,16 +263,24 @@ module Cryptolib (R : Representation) (T : Transform) =
       (oc,t)
 
     let output (oc,trans) (s : string) pos n = 
-      let next_remain = (!remain + n) mod T.bsize in
-      let to_put = (!remain + n) - next_remain in
-      remain := next_remain ;
-      trans#put_substring s pos to_put ;
-      trans#flush ;
-      while trans#available_output != 0 do
-        let (s,pos,n) = trans#get_substring in
-        R.output oc s pos n
-      done ;
-      trans#put_substring s (pos + to_put) !remain
+      let total = (!remain + n) in
+      let m = T.bsize in
+      let next_remain = (total mod m) in
+      if (total < T.bsize) then begin
+          remain := next_remain ;
+          trans#put_substring s pos n ;
+      end
+      else begin
+          let to_put = (total - !remain - next_remain) in
+          remain := next_remain ;
+          trans#put_substring s pos to_put ;
+          trans#flush ;
+          while trans#available_output != 0 do
+              let (s,pos,n) = trans#get_substring in
+              R.output oc s pos n
+          done ;
+          trans#put_substring s (pos + to_put) !remain
+      end
 
     let close_out_noerr (oc,trans) =
       trans#finish ;
@@ -205,8 +294,9 @@ module Cryptolib (R : Representation) (T : Transform) =
 
 (* module Implementation = Make(Plain) *)
 (* module Implementation = Make(Cryptolib(Plain)(Gziped)) *)
-module Implementation = Make(Cryptolib(Plain)(Aes_encrypted))
+(* module Implementation = Make(Cryptolib(Plain)(Aes_encrypted)) *)
+
+module Implementation = Make(Cryptolib(Cryptolib(Authenticated(Plain))(Aes_encrypted))(Gziped))
 
 let open_file = Implementation.open_file
-
 let write_file = Implementation.write_file
