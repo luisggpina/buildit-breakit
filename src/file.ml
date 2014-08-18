@@ -32,12 +32,6 @@ module type Transform =
     val c_to_p : string -> int * (string -> C.transform)
   end
 
-module type S =
-  sig
-    val open_file : string -> L.t
-    val write_file : string -> L.t -> unit
-  end
-
 module Make(R: Representation) =
   struct
     let open_file secret filename = 

@@ -46,28 +46,30 @@ let command =
       spec
       (fun k h s r e g t i a l u b log_filename other ->
         let log = F.open_file k log_filename in
-        match h,s,r,e,g,t,i,a,l,u,b with
-        | true,true,false,[],[],false,false,false,[],[],false -> raise Not_Implemented
-        | false,true,false,[],[],false,false,false,[],[],false -> L.print_state log
-        | _,false,true,[],[],false,false,false,[],[],false -> raise Invalid_Argument
-        | true,false,true,employees,guests,false,false,false,[],[],false -> raise Not_Implemented
-        | false,false,true,[ employee ],[],false,false,false,[],[],false -> L.print_rooms (V.Employee employee) log
-        | false,false,true,[],[ guest ],false,false,false,[],[],false -> L.print_rooms (V.Guest guest) log
-        | false,false,false,[ employee ],[],true,false,false,[],[],false -> L.print_time (V.Employee employee) log
-        | false,false,false,[],[ guest ],true,false,false,[],[],false -> L.print_time (V.Guest guest) log
-        | _,false,false,[],[],false,true,false,[],[],false -> raise Invalid_Argument
-        | true,false,false,employees, guests ,false,true,false,[],[],false -> raise Not_Implemented
-        | false,false,false,employees, guests ,false,true,false,[],[],false -> print_occupied_rooms employees guests log
-        | true,false,false,[],[],false,false,true,[ low ],[ up ],false -> raise Not_Implemented
-        | false,false,false,[],[],false,false,true,[ low ],[ up ],false 
+        let mode = if h then P.HTML else P.Plain in
+        match mode,s,r,e,g,t,i,a,l,u,b with
+        | _,true,false,[],[],false,false,false,[],[],false ->
+                L.print_state log mode
+        | _,false,true,[],[],false,false,false,[],[],false ->
+                raise Invalid_Argument
+        | _,false,true,[ employee ],[],false,false,false,[],[],false ->
+                L.print_rooms (V.Employee employee) log mode
+        | P.Plain,false,true,[],[ guest ],false,false,false,[],[],false ->
+                L.print_rooms (V.Guest guest) log P.Plain
+        | P.Plain,false,false,[ employee ],[],true,false,false,[],[],false ->
+                L.print_time (V.Employee employee) log
+        | P.Plain,false,false,[],[ guest ],true,false,false,[],[],false ->
+                L.print_time (V.Guest guest) log
+        | _,false,false,[],[],false,true,false,[],[],false ->
+                raise Invalid_Argument
+        | _,false,false,employees, guests ,false,true,false,[],[],false ->
+                print_occupied_rooms employees guests log mode
+        | _,false,false,[],[],false,false,true,[ low ],[ up ],false 
                 when up > low ->
-                    L.print_employees (low,up) None log
-        | true,false,false,[],[],false,false,false,low1 :: [ low2 ], up1 :: [ up2 ],true
-                when up1 > low1 && up2 > low2 -> 
-                    raise Not_Implemented
-        | false,false,false,[],[],false,false,false,low1 :: [ low2 ], up1 :: [ up2 ],true 
+                    L.print_employees (low,up) None log mode
+        | _,false,false,[],[],false,false,false,low1 :: [ low2 ], up1 :: [ up2 ],true 
                 when up1 > low1 && up2 > low2 ->
-                    L.print_employees (low1,up1) (Some (low2,up2)) log
+                    L.print_employees (low1,up1) (Some (low2,up2)) log mode
         | _,_,_,_,_,_,_,_,_,_,_ -> raise Invalid_Argument
       )
 

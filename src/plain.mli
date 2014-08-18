@@ -1,7 +1,9 @@
 exception Not_Implemented
 
-val print_state : Gallery.Visitor.t list * Gallery.Visitor.t list * (Gallery.Room.t * Gallery.Visitor.t list) list -> unit
+type mode = Plain | HTML
 
-val print_rooms : int list -> unit
+val print_state : Gallery.Visitor.t list * Gallery.Visitor.t list * (Gallery.Room.t * Gallery.Visitor.t list) list -> mode -> unit
 
-val print_names : Gallery.Visitor.t list -> unit
+val print_rooms : int list -> mode -> unit
+
+val print_names : Gallery.Visitor.t list -> mode -> unit

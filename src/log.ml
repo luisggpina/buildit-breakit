@@ -42,7 +42,7 @@ let to_serial (log : t) =
 
 module M = Map.Make(G.Room)
 
-let print_state (log) =
+let print_state log mode =
     let f visitor room lst =
         let (employees, guests, room_map) = lst in
         let (employees, guests) = 
@@ -61,16 +61,16 @@ let print_state (log) =
     let (employees, visitors, room_map) =
         (G.fold f (gallery log) ([], [], M.empty))
     in
-    (P.print_state (employees, visitors, (M.fold g room_map [])))
+    (P.print_state (employees, visitors, (M.fold g room_map [])) mode)
 
-let print_rooms visitor log =
+let print_rooms visitor log mode =
     let g lst entry =
       match entry with
         | v,E.Entry,_,R.Some r -> 
             if ((V.compare v visitor) == 0) then r :: lst else lst
         | _ -> lst
     in 
-    P.print_rooms (List.fold_left g [] (entries log))
+    P.print_rooms (List.fold_left g [] (entries log)) mode
 
 let print_time visitor log =
   let gal = (gallery log) in
@@ -95,7 +95,7 @@ module VS = Set.Make(V)
 module RS = Set.Make(R)
 module RM = Map.Make(R)
 
-let print_occupied_rooms visitors log =
+let print_occupied_rooms visitors log mode =
     let (gal,entries) = log in
     let size = (VS.cardinal visitors) in
     let create_map_from_gallery _ = 
@@ -139,9 +139,9 @@ let print_occupied_rooms visitors log =
         | _ -> raise Invalid_Argument
     in
     let results = RS.fold results_printer results [] in
-    (P.print_rooms results)
+    (P.print_rooms results mode)
 
-let print_employees i1 i2 log =
+let print_employees i1 i2 log mode =
     let (gal, entries) = log in
     let create_set_from_gallery _ = 
         let f visitor room set =
@@ -196,4 +196,4 @@ let print_employees i1 i2 log =
         | None -> let (result,_,_) = after i1 set entries in result
     in
     let set = (proc_entry (create_set_from_gallery ()) entries) in
-    P.print_names (VS.fold (fun x lst -> x :: lst) set [])
+    P.print_names (VS.fold (fun x lst -> x :: lst) set []) mode
