@@ -1,6 +1,7 @@
 
 exception Invalid_Argument
 exception Invalid_State
+exception Authentication_Error
 
 let unsanitized (r_x : 'a option ref) (x: 'a) : unit =
     r_x := Some x

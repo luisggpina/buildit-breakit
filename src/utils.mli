@@ -1,5 +1,7 @@
 exception Invalid_Argument
 exception Invalid_State
+exception Invalid_State
+exception Authentication_Error
 
 val unsanitized : 'a option ref -> 'a -> unit
 

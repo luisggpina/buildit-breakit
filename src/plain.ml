@@ -23,11 +23,16 @@ let print_list_2 l1 l2 f g e0 =
   in
   aux l1 l2
 
+let visitors_comparer v1 v2 =
+    compare (V.name v1) (V.name v2)
+
 let print_vs vs = print_list vs V.name "," true
 
 let print_r_v f (r,vs)=
   match r with
-  | R.Some r -> (f (string_of_int r) (print_vs vs))
+  | R.Some r -> 
+          let vs = (L.fast_sort visitors_comparer vs) in
+          (f (string_of_int r) (print_vs vs))
   | _ -> ""
 
 let print_state_plain employees guests rooms =
@@ -36,7 +41,7 @@ let print_state_plain employees guests rooms =
   (*   Print all room lines *)
   let print_rs_vs lst = print_list lst print_r_v "\n" true in
   (*   Print both visitor lines *)
-  let print_vs_vs vs_vs = print_list vs_vs print_vs "\n" true in
+  let print_vs_vs vs_vs = print_list vs_vs print_vs "\n" false in
   (print_vs_vs (employees :: [ guests ])) ^ (print_rs_vs rooms)
 
 let state_visitors_html_head =
@@ -92,6 +97,8 @@ let rec state_room_visitors visits =
     | v :: rest -> (V.name v) ^ "," ^ (state_room_visitors rest)
 
 let print_state (employees, guests, rooms) mode =
+  let employees = L.fast_sort visitors_comparer employees in
+  let guests = L.fast_sort visitors_comparer guests in
   let s =
     match mode with
     | HTML ->  print_state_html employees guests rooms
@@ -157,6 +164,7 @@ let print_names_html visitors =
   print_names_html_tail
 
 let print_names visitors mode =
+    let visitors = L.fast_sort visitors_comparer visitors in
     match mode with
     | HTML -> print_string (print_names_html visitors)
     | Plain -> print_string (print_vs visitors)

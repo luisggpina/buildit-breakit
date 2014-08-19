@@ -47,7 +47,8 @@ let print_occupied_rooms employees guests log =
     let visitors = List.fold_left (f (fun x -> V.Employee x)) L.VS.empty employees in
     let visitors = List.fold_left (f (fun x -> V.Guest x)) visitors guests in
     L.print_occupied_rooms visitors log
-let () =
+
+let main () =
     A.parse_argv Sys.argv ~current:(ref 0) arg_specs (U.take_argument log_filename) "" ;
     let log =
         match !k,!log_filename with
@@ -69,3 +70,11 @@ let () =
     | _,false,false,[],[],false,false,false,l1::[l2],u1::[u2],true
          when u1 > l1 && u2 > l2                                 -> L.print_employees (l1,u1) (Some (l2,u2)) log mode
     | _,_,_,_,_,_,_,_,_,_,_                                      -> raise Invalid_Argument
+
+let () =
+    try
+        main ()
+    with
+    | U.Authentication_Error  -> print_string "integrity violation\n" ; exit 1
+    | U.Invalid_State
+    | U.Invalid_Argument      -> print_string "invalid\n" ; exit 1;

@@ -63,8 +63,6 @@ let current_room (visitor) (gallery) =
 let current_time (gallery) =
     let (time, map) = gallery in time
 
-exception Invalid_State
-
 let process_event (visitor) (event) (time) (room) (gallery) =
     let (cur_t,cur_map) = gallery in
     let process (cur_room) =
@@ -74,11 +72,11 @@ let process_event (visitor) (event) (time) (room) (gallery) =
         | Event.Departure,Room.Some cur_r,Room.Some r ->
                 if (cur_r == r) 
                 then (RM.add visitor Room.Gallery cur_map) 
-                else raise Invalid_State
+                else raise Utils.Invalid_State
         | Event.Departure,Room.Gallery,Room.Gallery -> (RM.remove visitor cur_map)
-        | _ -> raise Invalid_State in
+        | _ -> raise Utils.Invalid_State in
     if (time <= cur_t)
-    then raise Invalid_State
+    then raise Utils.Invalid_State
     else (time, (process (current_room visitor gallery)))
 
 let fold (f) (gallery) =

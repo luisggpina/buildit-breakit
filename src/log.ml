@@ -15,9 +15,6 @@ module Entry =
 
 type t = G.t * Entry.t list
 
-exception Invalid_File
-exception Invalid_Argument
-
 let empty () : t =
   (G.empty (),[])
 
@@ -136,7 +133,7 @@ let print_occupied_rooms visitors log mode =
     let results_printer room lst =
         match room with
         | R.Some r -> r :: lst
-        | _ -> raise Invalid_Argument
+        | _ -> raise Utils.Invalid_Argument
     in
     let results = RS.fold results_printer results [] in
     (P.print_rooms results mode)
@@ -156,7 +153,7 @@ let print_employees i1 i2 log mode =
             match entries with
             | [] ->
                     set
-            | (_,_,t,_) :: _ when t < low ->
+            | (_,_,t,_) :: _ when t <= low ->
                     set
             | (V.Employee _ as e,_,_,R.Gallery) :: rest ->
                     within low (VS.remove e set) rest
@@ -192,7 +189,7 @@ let print_employees i1 i2 log mode =
                         if u1 >= u2 && u2 >= l2 then (VS.diff (VS.inter (VS.inter a b) c) b) else
                         if u2 >= u1 && u1 >= l1 then (VS.diff b (VS.inter (VS.inter a b) c))
                                                 else (VS.diff (VS.inter b c) (VS.inter a b))
-                | _ -> raise Invalid_Argument)
+                | _ -> raise Utils.Invalid_Argument)
         | None -> let (result,_,_) = after i1 set entries in result
     in
     let set = (proc_entry (create_set_from_gallery ()) entries) in

@@ -7,7 +7,7 @@ ATDGEN_FLAGS := -j-std
 -include Atdgen.mk
 
 SOURCES := \
-	src/main.ml src/gallery.ml src/plain.ml src/log.ml src/serial_t.mli src/serial_t.ml src/serial_j.mli src/serial_j.ml src/file.ml src/utils.ml
+	src/main.ml src/utils.ml src/gallery.ml src/plain.ml src/log.ml src/serial_t.mli src/serial_t.ml src/serial_j.mli src/serial_j.ml src/file.ml
 
 DOC_FILES := \
 	src/main.mli

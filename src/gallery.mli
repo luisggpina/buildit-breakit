@@ -40,8 +40,6 @@ val current_room : Visitor.t -> t -> Room.t
 
 val current_time : t -> Time.t
 
-exception Invalid_State
-
 val process_event : Visitor.t -> Event.t -> Time.t -> Room.t -> t -> t
 
 val fold : (Visitor.t -> Room.t -> 'a -> 'a) -> t -> 'a -> 'a

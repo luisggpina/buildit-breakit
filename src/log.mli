@@ -7,8 +7,6 @@ module Entry :
 
 type t = Gallery.t * Entry.t list
 
-exception Invalid_File
-
 val empty : unit -> t
 
 val process_event : Gallery.Visitor.t -> Gallery.Event.t -> Gallery.Time.t -> Gallery.Room.t -> t -> t

@@ -106,7 +106,7 @@ let rec parse_batch b =
     | e -> close_in_noerr ic ; raise e
 
 
-let () =
+let main () =
     let has_args = ref false in
     let batch () =
         match !b with
@@ -125,3 +125,11 @@ let () =
     with
     | Arg.Bad e   -> arg ()
     | e           -> raise e
+
+let () =
+    try
+        main ()
+    with
+    | U.Authentication_Error
+    | U.Invalid_State
+    | U.Invalid_Argument -> print_string "invalid\n" ; exit 1;

@@ -95,8 +95,6 @@ let key secret =
   hash#add_string secret ;
   hash#result
 
-exception Authentication_error
-
 module Authenticated (R : Representation) =
   struct
     type in_channel = R.in_channel
@@ -125,7 +123,7 @@ module Authenticated (R : Representation) =
             if r == 0 then begin
                 R.close_in_noerr ic ;
                 if ((compare result hash#result) != 0) then
-                    raise Authentication_error
+                    raise Utils.Authentication_Error
             end
             else begin
                 hash#add_string result ;
