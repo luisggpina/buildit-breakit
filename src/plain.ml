@@ -133,7 +133,30 @@ let print_rooms rooms mode =
     | HTML -> print_string (print_rooms_html rooms)
     | Plain -> print_string (print_rooms_plain rooms)
 
+let print_names_html_head =
+"<table>
+<tr>
+  <th>Employees</th>
+</tr>
+"
+
+let print_names_html e =
+"
+<tr>
+  <td>" ^ e ^ "</td>
+</tr>
+"
+
+let print_names_html_tail =
+"</table>
+"
+
+let print_names_html visitors =
+  print_names_html_head ^
+  (print_list visitors (fun v -> print_names_html (V.name v)) "" true) ^
+  print_names_html_tail
+
 let print_names visitors mode =
     match mode with
-    | HTML -> raise Not_Implemented
+    | HTML -> print_string (print_names_html visitors)
     | Plain -> print_string (print_vs visitors)
