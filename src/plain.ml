@@ -100,11 +100,37 @@ let print_state (employees, guests, rooms) mode =
   print_string s
 
 let print_rooms_plain rooms =
-  print_list rooms string_of_int "," false
+  print_list rooms string_of_int "," true
+
+let print_rooms_html_head =
+"<html>
+<body>
+<table>
+<tr>
+  <th>Rooms</th>
+</tr>
+"
+
+let print_rooms_html_r r =
+"<tr>
+  <td>" ^ r ^ "</td>
+</tr>
+"
+
+let print_rooms_html_tail =
+"</table>
+</body>
+</html>
+"
+
+let print_rooms_html rooms =
+  print_rooms_html_head ^
+  (print_list rooms (fun r -> print_rooms_html_r (string_of_int r)) "" true) ^
+  print_rooms_html_tail
 
 let print_rooms rooms mode =
     match mode with
-    | HTML -> raise Not_Implemented
+    | HTML -> print_string (print_rooms_html rooms)
     | Plain -> print_string (print_rooms_plain rooms)
 
 let print_names visitors mode =
