@@ -21,7 +21,7 @@ EXTLIBDIRS :=
 CLIBS :=
 LIBS :=
 CC := gcc
-PACKS := core atdgen cryptokit
+PACKS := atdgen cryptokit
 OCAMLFLAGS := -g -w +a-4-6-7-9-27-29-32..39-41..42-44-45-8
 # default warning flags are -w +a-4-6-7-9-27-29-32..39-41..42-44-45
 OCAMLLDFLAGS := -g
