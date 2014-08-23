@@ -12,9 +12,9 @@ let sanitize (f: 'a -> bool) (r_x : 'a option ref) (x: 'a) : unit =
 let sanitize_list (f : 'a -> bool) (r_x : 'a list ref) (x : 'a) : unit =
     if (f x) then r_x := !r_x @ [ x ] else raise Invalid_Argument
 
-let sanitize_int = sanitize (fun x -> x > 0)
+let sanitize_int = sanitize (fun x -> x >= 0)
 
-let sanitize_ints = sanitize_list (fun x -> x > 0)
+let sanitize_ints = sanitize_list (fun x -> x >= 0)
 
 let sanitize_regexp sanitizer (r: Str.regexp) = sanitizer (fun x -> Str.string_match r x 0)
 
