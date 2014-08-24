@@ -12,6 +12,8 @@ module H = Cryptokit.Hash
 module P = Cryptokit.Padding
 module B = Buffer
 
+let buffer_size = 16 * 1024;
+
 module type Representation =
   sig
     type in_channel
@@ -58,7 +60,7 @@ module Make(R: Representation) =
       let roc = (R.open_out secret filename) in
       let flusher = (flush roc) in
         try
-          let boc = BO.create ~make_room:flusher 4096 in
+          let boc = BO.create ~make_room:flusher buffer_size in
           SJ.write_log boc (L.to_serial log) ;
           BO.flush_channel_writer boc ;
           R.close_out_noerr roc
@@ -106,8 +108,7 @@ module Authenticated (R : Representation) =
     let authenticate secret filename =
         let hash = H.sha256 () in
         let result = key secret in
-        let l = 128 * hsize in
-        let buffer = String.make l ' ' in
+        let buffer = String.make buffer_size ' ' in
         let ic = R.open_in secret filename in
         let rec input_block_multiple pos n =
             let n = n - (n mod hsize) in
@@ -119,7 +120,7 @@ module Authenticated (R : Representation) =
                 r_n
         in
         let rec proc_file () =
-            let r = input_block_multiple 0 l in
+            let r = input_block_multiple 0 buffer_size in
             if r == 0 then begin
                 R.close_in_noerr ic ;
                 if ((compare result hash#result) != 0) then
@@ -188,7 +189,7 @@ module Cryptolib (R : Representation) (T : Transform) =
 
     let remain = ref 0
 
-    let buf = B.create 4096
+    let buf = B.create buffer_size
     let buf_pos = ref None
 
     let open_in secret filename =
