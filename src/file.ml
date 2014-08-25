@@ -174,7 +174,8 @@ module Aes_encrypted =
     let bsize = 16
 
     let p_to_c secret =
-      let iv = R.string R.secure_rng bsize in
+(*       let iv = R.string R.secure_rng bsize in *)
+      let iv = R.string (R.device_rng "/dev/urandom") bsize in
       (iv,CC.aes ~iv:iv (key secret) ~pad:P.length CC.Encrypt)
 
     let c_to_p secret =
