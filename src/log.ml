@@ -156,13 +156,13 @@ let print_employees i1 i2 log mode =
             | (_,_,t,_) :: _ when t <= low ->
                     set
             | (V.Employee _ as e,_,_,R.Gallery) :: rest ->
-                    within low (VS.remove e set) rest
+                    within low (VS.add e set) rest
             | _ :: rest ->
                     within low set rest
         in
         let rec after (low,up) set entries =
             match entries with
-            | (_,_,t,_) :: _ when t < up ->
+            | (_,_,t,_) :: _ when t <= up ->
                     (within low set entries,set,entries)
             | (V.Employee _ as e,E.Departure,t,R.Gallery) :: rest ->
                     after (low,up) (VS.add e set) rest
