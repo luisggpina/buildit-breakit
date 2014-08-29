@@ -37,11 +37,11 @@ let print_r_v f (r,vs)=
 
 let print_state_plain employees guests rooms =
   (*   Print each room row *)
-  let print_r_v = print_r_v (fun r vs -> r ^ ":" ^ vs) in
+  let print_r_v = print_r_v (fun r vs -> r ^ ": " ^ vs) in
   (*   Print all room lines *)
-  let print_rs_vs lst = print_list lst print_r_v "\n" true in
+  let print_rs_vs lst = print_list lst print_r_v "\n" false in
   (*   Print both visitor lines *)
-  let print_vs_vs vs_vs = print_list vs_vs print_vs "\n" false in
+  let print_vs_vs vs_vs = print_list vs_vs print_vs "\n" true in
   (print_vs_vs (employees :: [ guests ])) ^ (print_rs_vs rooms)
 
 let state_visitors_html_head =
@@ -62,7 +62,8 @@ let print_v_html e g =
 "
 
 let state_rooms_html_head =
-"<table>
+"</table>
+<table>
 <tr>
   <th>Room ID</th>
   <th>Occupants</th>
