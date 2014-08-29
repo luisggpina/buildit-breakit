@@ -75,6 +75,6 @@ let () =
     try
         main ()
     with
-    | U.Authentication_Error  -> print_string "integrity violation\n" ; exit 1
+    | U.Authentication_Error  -> print_string "integrity violation\n" ; exit (-1)
     | U.Invalid_State
-    | U.Invalid_Argument      -> print_string "invalid\n" ; exit 1;
+    | U.Invalid_Argument      -> print_string "invalid\n" ; exit (-1);
