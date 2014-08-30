@@ -89,6 +89,15 @@ let parse_line log =
     in
     L.process_event visitor event t (R.inside !r) log
 
+let run_with_try f fail =
+    try
+      f ()
+    with
+    | U.Authentication_Error -> print_string "security error\n" ; fail ()
+    | Arg.Bad _
+    | U.Invalid_State
+    | U.Invalid_Argument -> print_string "invalid\n" ; fail ()
+
 let rec parse_batch b =
     let ic = open_in b in
     try
@@ -97,7 +106,7 @@ let rec parse_batch b =
             let argv = Sys.argv.(0) :: (Str.split (Str.regexp " ") line) in
             reset_args () ;
             A.parse_argv ~current:(ref 0) (Array.of_list argv) arg_specs (U.take_argument log_filename) "" ;
-            (log_multi_use parse_line)
+            run_with_try (fun () -> (log_multi_use parse_line)) (fun () -> ())
         done;
     with 
     | End_of_file -> 
@@ -126,10 +135,4 @@ let main () =
     | Arg.Bad e   -> arg ()
     | e           -> raise e
 
-let () =
-    try
-        main ()
-    with
-    | U.Authentication_Error -> print_string "security error\n" ; exit (-1);
-    | U.Invalid_State
-    | U.Invalid_Argument -> print_string "invalid\n" ; exit (-1);
+let () = run_with_try main (fun () -> exit (-1))
